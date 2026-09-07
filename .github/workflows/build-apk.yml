@@ -28,10 +28,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Create mock google-services.json if missing
+      - name: Create real google-services.json if missing
         run: |
           if [ ! -f "app/google-services.json" ]; then
-            echo '{"project_info":{"project_number":"1234567890","firebase_url":"https://mock.firebaseio.com","project_id":"mock-id","storage_bucket":"mock-id.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:1234567890:android:abcdef123456","android_client_info":{"package_name":"com.aistudio.pocketcash.pcp"}},"oauth_client":[],"api_key":[{"current_key":"MOCK_KEY"}],"services":{"appinvite_service":{"other_platform_oauth_client":[]}}}]}' > app/google-services.json
+            echo '{"project_info": {"project_number": "144641270230","firebase_url": "https://pocketcash-pro-default-rtdb.firebaseio.com","project_id": "pocketcash-pro","storage_bucket": "pocketcash-pro.firebasestorage.app"},"client": [{"client_info": {"mobilesdk_app_id": "1:144641270230:android:310950f3b7dba463fd0477","android_client_info": {"package_name": "com.aistudio.pocketcash.pcp"}},"oauth_client": [{"client_id": "144641270230-2n2vpu2nps9e8pb69erfocrqj9c0f7pl.apps.googleusercontent.com","client_type": 3}],"api_key": [{"current_key": "AIzaSyDDOY9bsY3hiYjHcc3kiOYWwTJ13WLsnpI"}],"services": {"appinvite_service": {"other_platform_oauth_client": [{"client_id": "144641270230-2n2vpu2nps9e8pb69erfocrqj9c0f7pl.apps.googleusercontent.com","client_type": 3}]}}}]} ' > app/google-services.json
           fi
 
       - name: Generate Debug Keystore if missing
