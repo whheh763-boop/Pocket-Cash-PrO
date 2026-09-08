@@ -1,7 +1,9 @@
+import re
+
 with open('app/src/main/java/com/example/ui/screens/AdminPanelScreen.kt', 'r') as f:
     content = f.read()
 
-content = content.replace("import Toast", "import android.widget.Toast")
+content = content.replace("viewModel.repository.updateAppConfig", "viewModel.updateAppConfig")
 
 with open('app/src/main/java/com/example/ui/screens/AdminPanelScreen.kt', 'w') as f:
     f.write(content)

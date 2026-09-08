@@ -78,6 +78,8 @@ class MainViewModel : ViewModel() {
 
     val appConfig: StateFlow<AppConfig> = _appConfig.asStateFlow()
 
+
+
     private var configFlowJob: Job? = null
 
     
@@ -89,6 +91,7 @@ class MainViewModel : ViewModel() {
         configFlowJob = viewModelScope.launch {
             repository.getAppConfigFlow().collect {
                 _appConfig.value = it
+                com.example.ads.AdsManager.isRealAdsEnabled = it.useRealAds
             }
         }
 
@@ -200,8 +203,15 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             val success = repository.verifyAndAddCoins(currentUid, taskId, amount, reason, minDurationMillis)
             withContext(Dispatchers.Main) {
-                if (success) onSuccess() else onError("Verification failed. Invalid or fraudulent attempt.")
+                if (success) onSuccess() else onError("Aapne bahut jaldi jawab diya! Kripya thoda wait karke submit karein taaki ad load ho sake.")
             }
+        }
+    }
+
+    
+    fun updateAppConfig(config: AppConfig) {
+        viewModelScope.launch {
+            repository.updateAppConfig(config)
         }
     }
 

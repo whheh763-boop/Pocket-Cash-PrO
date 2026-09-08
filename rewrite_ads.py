@@ -1,4 +1,4 @@
-package com.example.ads
+content = """package com.example.ads
 
 import android.app.Activity
 import android.content.Context
@@ -214,3 +214,7 @@ fun BannerAdView(modifier: Modifier = Modifier) {
         }
     )
 }
+"""
+
+with open('app/src/main/java/com/example/ads/AdsManager.kt', 'w') as f:
+    f.write(content)

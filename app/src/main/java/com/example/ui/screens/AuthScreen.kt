@@ -204,6 +204,20 @@ fun AuthScreen(
     var isLoginMode by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var rememberMe by remember { mutableStateOf(false) }
+    
+    val prefs = context.getSharedPreferences("PocketCashAuth", android.content.Context.MODE_PRIVATE)
+    
+    LaunchedEffect(Unit) {
+        val savedEmail = prefs.getString("saved_email", "") ?: ""
+        val savedPassword = prefs.getString("saved_password", "") ?: ""
+        if (savedEmail.isNotEmpty() && savedPassword.isNotEmpty()) {
+            email = savedEmail
+            password = savedPassword
+            rememberMe = true
+        }
+    }
+
     var referralCode by remember { mutableStateOf("") }
     var selectedCountry by remember { mutableStateOf(Country.INDIA) }
     var isLoading by remember { mutableStateOf(false) }
@@ -400,6 +414,15 @@ fun AuthScreen(
                                     } else {
                                         val deviceId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
                                         viewModel.signup(email, password, selectedCountry, referralCode, deviceId)
+                                    }
+                                    
+                                    if (rememberMe) {
+                                        prefs.edit()
+                                            .putString("saved_email", email)
+                                            .putString("saved_password", password)
+                                            .apply()
+                                    } else {
+                                        prefs.edit().clear().apply()
                                     }
                                     onNavigateToHome()
                                 } catch (e: Exception) {

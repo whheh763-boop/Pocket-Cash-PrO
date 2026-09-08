@@ -173,6 +173,13 @@ fun PocketCashApp() {
                         onBack = { rootNavController.popBackStack() }
                     )
                 }
+                
+                composable("card_match") {
+                    CardMatchScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
             }
         }
     }

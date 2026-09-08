@@ -46,6 +46,7 @@ data class AppConfig(
     val minWithdrawCoins: Int = 1000,
     val coinValuePer1000: Double = 10.0,
     val maintenanceMode: Boolean = false,
+    val useRealAds: Boolean = false,
     val telegramLink: String = "",
     val whatsappLink: String = "",
     val instagramLink: String = "",

@@ -1,4 +1,5 @@
 package com.example.ui.screens
+import androidx.compose.material.icons.automirrored.filled.*
 
 import android.content.Intent
 import android.net.Uri
@@ -65,7 +66,7 @@ fun ProfileScreen(
             ) {
                 Text("My Account", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                 IconButtonGlass(icon = Icons.Default.Settings, onClick = {
-                    if (userState.email == "admin@gmail.com") onNavigateToAdmin() else Toast.makeText(context, "Settings", Toast.LENGTH_SHORT).show()
+                    if (userState.email == "chanelentertainment93@gmail.com") onNavigateToAdmin() else Toast.makeText(context, "Settings", Toast.LENGTH_SHORT).show()
                 })
             }
         }
@@ -122,7 +123,7 @@ fun ProfileScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Email, contentDescription = null, tint = PremiumPrimary, modifier = Modifier.size(12.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(userState.email.ifEmpty { "admin@gmail.com" }, color = PremiumOnSurfaceVariant, fontSize = 12.sp)
+                        Text(userState.email.ifEmpty { "chanelentertainment93@gmail.com" }, color = PremiumOnSurfaceVariant, fontSize = 12.sp)
                     }
                 }
             }
@@ -200,10 +201,10 @@ fun ProfileScreen(
                     .padding(bottom = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                SocialBtnPremium(modifier = Modifier.weight(1f), name = "WhatsApp", color = IconTintWhatsapp, icon = Icons.Default.Chat) {
+                SocialBtnPremium(modifier = Modifier.weight(1f), name = "WhatsApp", color = IconTintWhatsapp, icon = Icons.AutoMirrored.Filled.Chat) {
                     if (appConfig.whatsappLink.isNotEmpty()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.whatsappLink)))
                 }
-                SocialBtnPremium(modifier = Modifier.weight(1f), name = "Telegram", color = IconTintTelegram, icon = Icons.Default.Send) {
+                SocialBtnPremium(modifier = Modifier.weight(1f), name = "Telegram", color = IconTintTelegram, icon = Icons.AutoMirrored.Filled.Send) {
                     if (appConfig.telegramLink.isNotEmpty()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.telegramLink)))
                 }
                 SocialBtnPremium(modifier = Modifier.weight(1f), name = "Instagram", color = IconTintInstagram, icon = Icons.Default.CameraAlt) {

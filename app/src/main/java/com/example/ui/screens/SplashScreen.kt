@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -53,6 +55,7 @@ fun SplashScreen(onNavigateNext: () -> Unit) {
                     .size(150.dp)
                     .scale(scaleAnim.value)
                     .alpha(alphaAnim.value)
+                    .clip(RoundedCornerShape(32.dp))
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
