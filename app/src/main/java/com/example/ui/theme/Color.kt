@@ -2,30 +2,33 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Dark Theme (Deep Obsidian)
-val PremiumBackground = Color(0xFF0F0F1A)
-val PremiumSurface = Color(0xFF1A1A2E)
-val PremiumSurfaceVariant = Color(0xFF252542)
-val PremiumOnBackground = Color(0xFFFFFFFF)
-val PremiumOnSurfaceVariant = Color(0xFFA0ABC0)
+// Ultra-Premium Space Base
+val PremiumBackground = Color(0xFF07090E)
+val PremiumSurface = Color(0x8C161B26) // rgba(22, 27, 38, 0.55)
+val PremiumSurfaceVariant = Color(0xFF0E111A)
+val PremiumOnBackground = Color(0xFFF8FAFC)
+val PremiumOnSurfaceVariant = Color(0xFF94A3B8)
+val PremiumOutline = Color(0x14FFFFFF) // rgba(255,255,255,0.08)
+val PremiumOutlineVariant = Color(0x26FFFFFF) // rgba(255,255,255,0.15)
 
-// Light Theme
-val LightPremiumBackground = Color(0xFFF7F7FA)
-val LightPremiumSurface = Color(0xFFFFFFFF)
-val LightPremiumSurfaceVariant = Color(0xFFEBEBF0)
-val LightPremiumOnBackground = Color(0xFF1A1A2E)
-val LightPremiumOnSurfaceVariant = Color(0xFF5A5A72)
+// Accents
+val PremiumPrimary = Color(0xFF6366F1) // Indigo
+val PremiumPrimaryDark = Color(0xFFA855F7) // Purple
+val PremiumSecondary = Color(0xFF22D3EE) // Cyan
+val MovieAccent = Color(0xFFE11D48) // Netflix-style Red Accent
 
-// Shared/Accents
-val PremiumPrimary = Color(0xFF6C5CE7) // Neon Purple
-val PremiumSecondary = Color(0xFFFFD700) // Golden Coin
+val IconTintYellow = Color(0xFFFACC15) // Shimmering Gold
+val IconTintCyan = Color(0xFF22D3EE)
+val IconTintGreen = Color(0xFF10B981)
+val IconTintRed = Color(0xFFEF4444)
+val IconTintBlue = Color(0xFF3B82F6)
+val IconTintPink = Color(0xFFEC4899)
+val IconTintWhatsapp = Color(0xFF25D366)
+val IconTintTelegram = Color(0xFF0088CC)
+val IconTintInstagram = Color(0xFFE1306C)
+val IconTintYoutube = Color(0xFFFF0000)
 
-val PremiumOutline = Color(0xFF322C54)
-val PremiumOutlineVariant = Color(0xFF4A4082)
-val LightPremiumOutline = Color(0xFFE5E5EA)
-val LightPremiumOutlineVariant = Color(0xFFD1D1D6)
-
-val GradientStart = Color(0xFF6C5CE7)
-val GradientEnd = Color(0xFF8E7DF9)
-val GoldGradientStart = Color(0xFFFFD700)
-val GoldGradientEnd = Color(0xFFFFEAA7)
+val GradientMainStart = PremiumPrimary
+val GradientMainEnd = PremiumPrimaryDark
+val GradientSecondaryStart = Color(0xFFFBBF24)
+val GradientSecondaryEnd = Color(0xFFD97706)

@@ -1,2 +1,23 @@
-sed -i '/fun isUserLoggedIn(): String? {/i \
-    fun logout() {\n        auth.signOut()\n    }\n\n    fun getLeaderboardFlow(): Flow<List<User>> = callbackFlow {\n        val listener = usersRef.orderBy("coinBalance", Query.Direction.DESCENDING).limit(50)\n            .addSnapshotListener { snapshot, error ->\n                if (error != null) {\n                    close(error)\n                    return@addSnapshotListener\n                }\n                if (snapshot != null) {\n                    val list = snapshot.documents.mapNotNull { it.toObject(User::class.java) }\n                    trySend(list)\n                }\n            }\n        awaitClose { listener.remove() }\n    }\n' app/src/main/java/com/example/model/FirebaseRepository.kt
+sed -i '/class FirebaseRepository {/a \
+    private val configRef = db.collection("config").document("appSettings")\
+\
+    fun getAppConfigFlow(): Flow<AppConfig> = callbackFlow {\
+        val listener = configRef.addSnapshotListener { snapshot, error ->\
+            if (error != null) {\
+                close(error)\
+                return@addSnapshotListener\
+            }\
+            if (snapshot != null && snapshot.exists()) {\
+                val config = snapshot.toObject(AppConfig::class.java) ?: AppConfig()\
+                trySend(config)\
+            } else {\
+                trySend(AppConfig())\
+            }\
+        }\
+        awaitClose { listener.remove() }\
+    }\
+\
+    suspend fun updateAppConfig(config: AppConfig) {\
+        configRef.set(config).await()\
+    }\
+' app/src/main/java/com/example/model/FirebaseRepository.kt

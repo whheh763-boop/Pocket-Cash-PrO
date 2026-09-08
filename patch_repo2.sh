@@ -1,0 +1,1 @@
+sed -i 's/val newUser = User(/val currentDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())\n            val newUser = User(\n                deviceId = deviceId,\n                lastResetDate = currentDate,/g' app/src/main/java/com/example/model/FirebaseRepository.kt

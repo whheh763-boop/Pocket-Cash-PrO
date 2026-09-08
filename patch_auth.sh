@@ -1,0 +1,1 @@
+sed -i 's/viewModel.signup(email, password, selectedCountry, referralCode)/val deviceId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)\n                                viewModel.signup(email, password, selectedCountry, referralCode, deviceId)/g' app/src/main/java/com/example/ui/screens/AuthScreen.kt

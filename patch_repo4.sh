@@ -1,0 +1,1 @@
+sed -i 's/val listener = usersRef.orderBy("coinBalance", Query.Direction.DESCENDING).limit(50)/val listener = usersRef.whereGreaterThan("coinBalance", 0).orderBy("coinBalance", Query.Direction.DESCENDING).limit(50)/g' app/src/main/java/com/example/model/FirebaseRepository.kt

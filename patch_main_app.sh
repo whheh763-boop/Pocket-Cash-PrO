@@ -1,0 +1,1 @@
+sed -i 's/NavigationBar {/NavigationBar(\n                containerColor = com.example.ui.theme.PremiumBackground,\n                contentColor = com.example.ui.theme.PremiumOnBackground\n            ) {/g' app/src/main/java/com/example/ui/screens/MainAppScreen.kt

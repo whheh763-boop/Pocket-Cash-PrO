@@ -1,21 +1,22 @@
 package com.example.ui.screens
-import androidx.compose.ui.graphics.nativeCanvas
 
 import android.app.Activity
+import android.content.Context
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
@@ -24,14 +25,16 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.ads.AdsManager
-import com.example.ui.theme.PremiumPrimary
-import com.example.ui.theme.PremiumSecondary
 import com.example.viewmodel.MainViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
@@ -45,228 +48,432 @@ fun SpinWheelScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val scope = rememberCoroutineScope()
+    val prefs = context.getSharedPreferences("spin_prefs", Context.MODE_PRIVATE)
 
-    val prizes = listOf(10, 50, 0, 100, 20, 5)
-    val colors = listOf(
-        Color(0xFF6C5CE7), Color(0xFFFFD700), Color(0xFFE74C3C), 
-        Color(0xFF2ECC71), Color(0xFF9B59B6), Color(0xFF3498DB)
+    var spinsLeft by remember { mutableStateOf(prefs.getInt("spin_left", 10)) }
+    var todayEarned by remember { mutableStateOf(prefs.getInt("spin_today", 0)) }
+    
+    val userState by viewModel.userState.collectAsState()
+    val coins = userState.coinBalance
+
+    val segments = listOf(
+        Pair("50", 50) to Color(0xFF6366F1),
+        Pair("100", 100) to Color(0xFF0F172A),
+        Pair("20", 20) to Color(0xFF22D3EE),
+        Pair("200", 200) to Color(0xFFFACC15),
+        Pair("10", 10) to Color(0xFF6366F1),
+        Pair("150", 150) to Color(0xFF0F172A),
+        Pair("30", 30) to Color(0xFF22D3EE),
+        Pair("500", 500) to Color(0xFF22C55E)
     )
 
     val rotation = remember { Animatable(0f) }
     var isSpinning by remember { mutableStateOf(false) }
-    var spinsLeft by remember { mutableStateOf(10) }
-    var showRewardDialog by remember { mutableStateOf(false) }
-    var earnedCoins by remember { mutableStateOf(0) }
+    var showWinModal by remember { mutableStateOf(false) }
+    var showAdModal by remember { mutableStateOf(false) }
+    var wonCoins by remember { mutableStateOf(0) }
+    var adTimer by remember { mutableStateOf(5) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Spin & Win", fontWeight = FontWeight.Bold, color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                )
-            )
-        },
-        containerColor = Color.Black // Let background gradient show through
-    ) { innerPadding ->
+    fun saveState() {
+        prefs.edit()
+            .putInt("spin_left", spinsLeft)
+            .putInt("spin_today", todayEarned)
+            .apply()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF07090E))
+    ) {
+        // Ambient Background Glows
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(Color(0xFF141E30), Color(0xFF243B55))))
-        ) {
+                .offset(x = (-40).dp, y = (-40).dp)
+                .size(260.dp)
+                .blur(100.dp)
+                .background(Color(0xFF6366F1).copy(alpha = 0.25f), CircleShape)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 50.dp, y = (-100).dp)
+                .size(280.dp)
+                .blur(100.dp)
+                .background(Color(0xFFFACC15).copy(alpha = 0.25f), CircleShape)
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top Controls
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 40.dp, start = 20.dp, end = 20.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Spin & Win",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White
+                    )
+                }
+
+                // Wallet Badge
+                Row(
+                    modifier = Modifier
+                        .background(Color(0xFFFACC15).copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                        .border(1.dp, Color(0xFFFACC15).copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "🪙 ${"%,d".format(coins)}",
+                        color = Color(0xFFFACC15),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 14.sp
+                    )
+                }
+            }
+
+            // Main Content
             Column(
                 modifier = Modifier
-                    .padding(innerPadding)
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "Daily Spins Left: $spinsLeft/10",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
-                )
+                // Stats Card
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF161B26).copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(20.dp))
+                        .padding(horizontal = 18.dp, vertical = 14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("SPINS REMAINING", fontSize = 12.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.SemiBold)
+                        Text("$spinsLeft/10", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.ExtraBold)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("TODAY'S WON", fontSize = 12.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.SemiBold)
+                        Text("+$todayEarned", fontSize = 18.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.ExtraBold)
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(64.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
-                // Wheel UI (Premium Design)
+                // Wheel Arena
                 Box(
                     modifier = Modifier
-                        .size(320.dp)
-                        .shadow(24.dp, CircleShape, spotColor = Color(0xFFFFD700))
-                        .border(8.dp, Brush.linearGradient(listOf(Color(0xFFFFD700), Color(0xFFF39C12))), CircleShape)
-                        .background(Color.White, CircleShape),
+                        .size(300.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    // Wheel Canvas
                     Canvas(
                         modifier = Modifier
                             .fillMaxSize()
+                            .border(6.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+                            .shadow(35.dp, CircleShape, spotColor = Color(0xFF6366F1).copy(alpha = 0.3f))
+                            .clip(CircleShape)
                             .rotate(rotation.value)
                     ) {
-                        val sweepAngle = 360f / prizes.size
+                        val numSegments = segments.size
+                        val sweepAngle = 360f / numSegments
                         val radius = size.width / 2
 
-                        for (i in prizes.indices) {
-                            // Slices
+                        for (i in 0 until numSegments) {
+                            val segmentInfo = segments[i]
+                            val label = segmentInfo.first.first
+                            val color = segmentInfo.second
+
+                            // Segment Fill
                             drawArc(
-                                brush = Brush.radialGradient(listOf(colors[i], colors[i].copy(alpha = 0.7f))),
+                                color = color,
                                 startAngle = i * sweepAngle,
                                 sweepAngle = sweepAngle,
                                 useCenter = true,
                                 style = Fill
                             )
-                            // Slice Borders
+
+                            // Segment Dividers
                             drawArc(
-                                color = Color.White.copy(alpha = 0.5f),
+                                color = Color.White.copy(alpha = 0.15f),
                                 startAngle = i * sweepAngle,
                                 sweepAngle = sweepAngle,
                                 useCenter = true,
-                                style = Stroke(width = 4.dp.toPx())
+                                style = Stroke(width = 2.dp.toPx())
                             )
-                            
-                            // Text Drawing
+
+                            // Segment Text
                             val angleInRadians = Math.toRadians((i * sweepAngle + sweepAngle / 2).toDouble())
-                            val textRadius = radius * 0.65f
+                            val textRadius = radius * 0.7f
                             val x = (center.x + textRadius * cos(angleInRadians)).toFloat()
                             val y = (center.y + textRadius * sin(angleInRadians)).toFloat()
 
-                            drawContext.canvas.nativeCanvas.let { canvas ->
-                                canvas.save()
-                                canvas.rotate((i * sweepAngle + sweepAngle / 2 + 90f), x, y)
-                                canvas.drawText(
-                                    "${prizes[i]}",
+                            drawContext.canvas.nativeCanvas.let { nativeCanvas ->
+                                nativeCanvas.save()
+                                nativeCanvas.rotate((i * sweepAngle + sweepAngle / 2 + 90f), x, y)
+                                nativeCanvas.drawText(
+                                    "$label C",
                                     x,
-                                    y,
+                                    y + 5f,
                                     android.graphics.Paint().apply {
-                                        color = android.graphics.Color.WHITE
-                                        textSize = 60f
+                                        this.color = if (color == Color(0xFFFACC15)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                                        textSize = 45f
                                         textAlign = android.graphics.Paint.Align.CENTER
-                                        typeface = android.graphics.Typeface.DEFAULT_BOLD
-                                        setShadowLayer(4f, 0f, 4f, android.graphics.Color.BLACK)
+                                        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
                                     }
                                 )
-                                canvas.restore()
+                                nativeCanvas.restore()
                             }
                         }
                     }
 
-                    // Center pin/button
+                    // Center Cap
                     Box(
                         modifier = Modifier
-                            .size(70.dp)
-                            .clip(CircleShape)
-                            .background(Brush.radialGradient(listOf(Color.White, Color.LightGray)))
-                            .border(4.dp, Color(0xFFF39C12), CircleShape)
-                            .shadow(8.dp, CircleShape),
+                            .size(60.dp)
+                            .background(Color(0xFF0F172A), CircleShape)
+                            .border(3.dp, Color(0xFFFACC15), CircleShape)
+                            .shadow(20.dp, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color(0xFFE74C3C), modifier = Modifier.size(40.dp))
+                        Text("⚡", fontSize = 24.sp) // Fallback for bolt icon
                     }
-                }
-                
-                // Outer Pointer Pin
-                Box(modifier = Modifier.offset(y = (-330).dp)) {
-                    Canvas(modifier = Modifier.size(40.dp)) {
+                    
+                    // Top Pointer
+                    Canvas(modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = (-12).dp)
+                        .size(32.dp, 28.dp)
+                    ) {
                         val path = androidx.compose.ui.graphics.Path().apply {
-                            moveTo(size.width / 2 - 20.dp.toPx(), 0f)
-                            lineTo(size.width / 2 + 20.dp.toPx(), 0f)
-                            lineTo(size.width / 2, 40.dp.toPx())
+                            moveTo(0f, 0f)
+                            lineTo(size.width, 0f)
+                            lineTo(size.width / 2, size.height)
                             close()
                         }
                         drawPath(
                             path = path,
-                            brush = Brush.linearGradient(listOf(Color(0xFFE74C3C), Color(0xFFC0392B)))
+                            color = Color(0xFFFACC15)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(40.dp))
 
-                Button(
-                    onClick = {
-                        if (!isSpinning && spinsLeft > 0) {
+                // Action Buttons
+                if (spinsLeft > 0) {
+                    Button(
+                        onClick = {
+                            if (isSpinning) return@Button
                             isSpinning = true
-                            spinsLeft -= 1
+                            
+                            // Play sound
+                            scope.launch { 
+                                val tg = android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 100)
+                                for(i in 1..15) { 
+                                    tg.startTone(android.media.ToneGenerator.TONE_CDMA_PIP, 50)
+                                    delay(200) 
+                                }
+                                tg.release() 
+                            }
 
                             scope.launch {
-                                val winningIndex = (0 until prizes.size).random()
-                                val targetRotation = rotation.value + 360f * 5 + (360f - (winningIndex * (360f / prizes.size)))
+                                val winningIndex = (0 until segments.size).random()
+                                val selectedPrize = segments[winningIndex]
+                                
+                                val degreesPerSegment = 360f / segments.size
+                                val targetSegmentAngle = (segments.size - winningIndex) * degreesPerSegment - (degreesPerSegment / 2)
+                                
+                                val extraSpins = 5 * 360f
+                                val targetRotation = rotation.value + extraSpins + (targetSegmentAngle - (rotation.value % 360f))
 
                                 rotation.animateTo(
                                     targetValue = targetRotation,
-                                    animationSpec = tween(durationMillis = 3500, easing = FastOutSlowInEasing)
+                                    animationSpec = tween(durationMillis = 4000, easing = FastOutSlowInEasing)
                                 )
 
-                                earnedCoins = prizes[winningIndex]
+                                wonCoins = selectedPrize.first.second
                                 isSpinning = false
-
-                                // Show Rewarded Ad when spin finishes
-                                activity?.let {
-                                    AdsManager.showRewardedAd(
-                                        activity = it,
-                                        onRewardEarned = {
-                                            viewModel.addCoins(earnedCoins)
-                                            showRewardDialog = true
-                                        },
-                                        onAdDismissed = {
-                                            if (!showRewardDialog && earnedCoins > 0) {
-                                                viewModel.addCoins(earnedCoins)
-                                                showRewardDialog = true
-                                            } else if (earnedCoins == 0) {
-                                                showRewardDialog = true
-                                            }
-                                        }
-                                    )
-                                } ?: run {
-                                    viewModel.addCoins(earnedCoins)
-                                    showRewardDialog = true
-                                }
+                                showWinModal = true
                             }
+                        },
+                        enabled = !isSpinning,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            disabledContainerColor = Color.Gray.copy(alpha = 0.5f)
+                        ),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.linearGradient(listOf(Color(0xFFFACC15), Color(0xFFD97706))),
+                                    RoundedCornerShape(18.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("▶ SPIN NOW", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                         }
-                    },
-                    enabled = !isSpinning && spinsLeft > 0,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFF39C12),
-                        disabledContainerColor = Color.Gray
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
-                ) {
-                    Text("SPIN TO WIN", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    }
+                } else {
+                    Button(
+                        onClick = { showAdModal = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(55.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent
+                        ),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.linearGradient(listOf(Color(0xFF22D3EE), Color(0xFF6366F1))),
+                                    RoundedCornerShape(18.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("▶ WATCH AD FOR +1 SPIN", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }
 
-    if (showRewardDialog) {
-        AlertDialog(
-            onDismissRequest = { showRewardDialog = false },
-            title = { Text(if (earnedCoins > 0) "Congratulations! 🎉" else "Oops! 😢", fontWeight = FontWeight.Bold) },
-            text = {
-                Text(
-                    if (earnedCoins > 0) "You won $earnedCoins coins!" else "Better luck next time! Try again.",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = { showRewardDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = PremiumPrimary)
-                ) {
-                    Text("Awesome")
+    // Win Modal
+    if (showWinModal) {
+        Dialog(
+            onDismissRequest = { },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF07090E).copy(alpha = 0.96f), RoundedCornerShape(36.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(36.dp))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(Color(0xFFFACC15).copy(alpha = 0.15f), CircleShape)
+                            .border(1.dp, Color(0xFFFACC15), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🏆", fontSize = 38.sp)
+                    }
+                    Spacer(modifier = Modifier.height(15.dp))
+                    Text("YOU WON! 🎉", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text("Aapko +$wonCoins Coins mil gaye hai!", fontSize = 14.sp, color = Color(0xFF94A3B8), modifier = Modifier.padding(top = 5.dp))
+                    
+                    Spacer(modifier = Modifier.height(25.dp))
+                    
+                    Button(
+                        onClick = {
+                            viewModel.addCoins(wonCoins, "Spin Wheel Reward")
+                            spinsLeft -= 1
+                            todayEarned += wonCoins
+                            saveState()
+                            showWinModal = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.linearGradient(listOf(Color(0xFFFACC15), Color(0xFFD97706))), RoundedCornerShape(18.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("COLLECT COINS", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        }
+                    }
                 }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
+            }
+        }
+    }
+
+    // Ad Modal
+    if (showAdModal) {
+        Dialog(
+            onDismissRequest = { showAdModal = false }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF07090E).copy(alpha = 0.96f), RoundedCornerShape(36.dp))
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(36.dp))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("📺", fontSize = 56.sp)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Watch Ad for +1 Spin", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    
+                    Spacer(modifier = Modifier.height(20.dp))
+                    
+                    Button(
+                        onClick = {
+                            showAdModal = false
+                            activity?.let {
+                                AdsManager.showRewardedAd(
+                                    activity = it,
+                                    onRewardEarned = {
+                                        spinsLeft += 1
+                                        saveState()
+                                    },
+                                    onAdDismissed = {
+                                        // Optional: Handle ad dismissed without earning
+                                    }
+                                )
+                            } ?: run {
+                                android.widget.Toast.makeText(context, "Cannot show ad.", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.linearGradient(listOf(Color(0xFF22D3EE), Color(0xFF6366F1))), RoundedCornerShape(18.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("WATCH NOW", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

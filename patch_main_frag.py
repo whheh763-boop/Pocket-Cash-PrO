@@ -1,0 +1,10 @@
+import re
+
+with open('app/src/main/java/com/example/MainActivity.kt', 'r') as f:
+    content = f.read()
+
+content = content.replace("import androidx.activity.ComponentActivity", "import androidx.activity.ComponentActivity\nimport androidx.fragment.app.FragmentActivity")
+content = content.replace("class MainActivity : ComponentActivity() {", "class MainActivity : FragmentActivity() {")
+
+with open('app/src/main/java/com/example/MainActivity.kt', 'w') as f:
+    f.write(content)

@@ -78,11 +78,16 @@ fun WatchVideoScreen(
                 onClick = {
                     if (activity != null) {
                         isWatching = true
+                        val taskId = java.util.UUID.randomUUID().toString()
+                        viewModel.startSecureTask(taskId)
                         AdsManager.showRewardedAd(
                             activity = activity,
                             onRewardEarned = {
-                                viewModel.addCoins(15)
-                                Toast.makeText(context, "You earned 15 coins!", Toast.LENGTH_SHORT).show()
+                                viewModel.claimSecureReward(taskId, viewModel.appConfig.value.videoReward, "Video Reward", 8000L, onSuccess = {
+                                    android.widget.Toast.makeText(context, "You earned ${viewModel.appConfig.value.videoReward} coins!", android.widget.Toast.LENGTH_SHORT).show()
+                                }, onError = { err ->
+                                    android.widget.Toast.makeText(context, err, android.widget.Toast.LENGTH_SHORT).show()
+                                })
                             },
                             onAdDismissed = {
                                 isWatching = false
@@ -103,7 +108,7 @@ fun WatchVideoScreen(
                 } else {
                     Icon(Icons.Default.PlayCircle, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Watch Ad (+15 Coins)", style = MaterialTheme.typography.titleMedium)
+                    Text("Watch Ad (+${viewModel.appConfig.value.videoReward} Coins)", style = MaterialTheme.typography.titleMedium)
                 }
             }
         }

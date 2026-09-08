@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.model.Country
 import com.example.model.User
+import com.example.model.Feedback
 import com.example.model.Transaction
+import com.example.model.AppConfig
 import com.example.model.FirebaseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,12 +34,64 @@ class MainViewModel : ViewModel() {
     
     private val _leaderboard = MutableStateFlow<List<User>>(emptyList())
     val leaderboard: StateFlow<List<User>> = _leaderboard.asStateFlow()
+
+    private val _feedbacks = MutableStateFlow<List<Feedback>>(emptyList())
+    val feedbacks: StateFlow<List<Feedback>> = _feedbacks.asStateFlow()
+
+
+    private val _appConfig = MutableStateFlow(AppConfig())
+
+    
+    private val _shopProducts = MutableStateFlow<List<com.example.model.ShopProduct>>(emptyList())
+    val shopProducts: StateFlow<List<com.example.model.ShopProduct>> = _shopProducts.asStateFlow()
+
+    fun addShopProduct(p: com.example.model.ShopProduct, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.addShopProduct(p)
+                withContext(Dispatchers.Main) { onSuccess() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onError(e.message ?: "Failed") }
+            }
+        }
+    }
+    
+    fun deleteShopProduct(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteShopProduct(id)
+        }
+    }
+
+    private val _quizQuestions = MutableStateFlow<List<com.example.model.QuizQuestion>>(emptyList())
+    val quizQuestions: StateFlow<List<com.example.model.QuizQuestion>> = _quizQuestions.asStateFlow()
+
+    fun addQuizQuestion(q: com.example.model.QuizQuestion, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.addQuizQuestion(q)
+                withContext(Dispatchers.Main) { onSuccess() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onError(e.message ?: "Failed") }
+            }
+        }
+    }
+
+    val appConfig: StateFlow<AppConfig> = _appConfig.asStateFlow()
+
+    private var configFlowJob: Job? = null
+
     
     private var userFlowJob: Job? = null
     private var txFlowJob: Job? = null
     private var leaderFlowJob: Job? = null
 
     init {
+        configFlowJob = viewModelScope.launch {
+            repository.getAppConfigFlow().collect {
+                _appConfig.value = it
+            }
+        }
+
         // Automatically check if logged in
         val uid = repository.isUserLoggedIn()
         if (uid != null) {
@@ -50,8 +104,8 @@ class MainViewModel : ViewModel() {
         startObserving(uid)
     }
     
-    suspend fun signup(email: String, pass: String, country: Country, refCode: String) {
-        val uid = repository.signUpWithEmail(email, pass, country, refCode)
+    suspend fun signup(email: String, pass: String, country: Country, refCode: String, deviceId: String) {
+        val uid = repository.signUpWithEmail(email, pass, country, refCode, deviceId)
         startObserving(uid)
     }
     
@@ -64,7 +118,33 @@ class MainViewModel : ViewModel() {
         _transactions.value = emptyList()
     }
 
-    private fun startObserving(uid: String) {
+    fun submitFeedback(name: String, phone: String, reason: String, message: String) {
+        viewModelScope.launch {
+            try {
+                repository.submitFeedback(
+                    Feedback(
+                        userId = currentUid,
+                        name = name,
+                        phone = phone,
+                        reason = reason,
+                        message = message
+                    )
+                )
+            } catch (e: Exception) {
+                // Ignore for now
+            }
+        }
+    }
+    
+    fun observeFeedbacks() {
+        viewModelScope.launch {
+            repository.getFeedbackFlow().collect { list ->
+                _feedbacks.value = list
+            }
+        }
+    }
+
+    fun startObserving(uid: String) {
         currentUid = uid
         userFlowJob?.cancel()
         txFlowJob?.cancel()
@@ -109,6 +189,22 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun startSecureTask(taskId: String) {
+        if (currentUid.isNotEmpty()) {
+            repository.startTask(currentUid, taskId)
+        }
+    }
+
+    fun claimSecureReward(taskId: String, amount: Int, reason: String, minDurationMillis: Long, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        if (currentUid.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val success = repository.verifyAndAddCoins(currentUid, taskId, amount, reason, minDurationMillis)
+            withContext(Dispatchers.Main) {
+                if (success) onSuccess() else onError("Verification failed. Invalid or fraudulent attempt.")
+            }
+        }
+    }
+
     fun addCoins(amount: Int, reason: String = "Task Reward") {
         if (currentUid.isNotEmpty()) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -120,7 +216,7 @@ class MainViewModel : ViewModel() {
     fun performDailyCheckIn() {
         if (currentUid.isNotEmpty() && _userState.value.canCheckIn) {
             viewModelScope.launch(Dispatchers.IO) {
-                repository.performCheckIn(currentUid)
+                repository.performCheckIn(currentUid, _appConfig.value.dailyCheckInReward)
             }
         }
     }
@@ -158,4 +254,28 @@ class MainViewModel : ViewModel() {
             }
         }
     }
+
+    fun updateAppConfig(config: AppConfig, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.updateAppConfig(config)
+                withContext(Dispatchers.Main) { onSuccess() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onError(e.message ?: "Failed to update config") }
+            }
+        }
+    }
+
+    fun submitQuizAnswer(quizId: String, reward: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        if (currentUid.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.markQuizCompleted(currentUid, quizId, reward)
+                withContext(Dispatchers.Main) { onSuccess() }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { onError(e.message ?: "Failed") }
+            }
+        }
+    }
 }
+

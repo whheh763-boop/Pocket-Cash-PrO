@@ -16,6 +16,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+
+import com.example.ui.screens.PrivacyPolicyScreen
+import com.example.ui.screens.FeedbackScreen
+
 import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.SplashScreen
 import com.example.ui.screens.MainAppScreen
@@ -23,8 +27,18 @@ import com.example.ui.screens.MathCaptchaScreen
 import com.example.ui.screens.ShoppingDealsScreen
 import com.example.ui.screens.TransactionHistoryScreen
 import com.example.ui.screens.SpinWheelScreen
+
+import com.example.ui.screens.AdminFeedbacksScreen
+
+import com.example.ui.screens.AdminPanelScreen
+
 import com.example.ui.screens.ScratchCardScreen
 import com.example.ui.screens.WatchVideoScreen
+import com.example.ui.screens.QuizScreen
+import com.example.ui.screens.MathEarnScreen
+import com.example.ui.screens.CardMatchScreen
+import com.example.ui.screens.DailyRewardsScreen
+import com.example.ui.screens.SpeedMathBlitzScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.MainViewModel
 import com.example.ads.AdsManager
@@ -91,7 +105,7 @@ fun PocketCashApp() {
                     )
                 }
                 composable("deals") {
-                    ShoppingDealsScreen(onBack = { rootNavController.popBackStack() })
+                    ShoppingDealsScreen(viewModel = mainViewModel, onBack = { rootNavController.popBackStack() })
                 }
                 composable("history") {
                     TransactionHistoryScreen(
@@ -99,6 +113,22 @@ fun PocketCashApp() {
                         onBack = { rootNavController.popBackStack() }
                     )
                 }
+                
+                composable("admin_feedbacks") {
+                    AdminFeedbacksScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
+
+                composable("admin_panel") {
+                    AdminPanelScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() },
+                        onNavigateToFeedbacks = { rootNavController.navigate("admin_feedbacks") }
+                    )
+                }
+
                 composable("spin") {
                     SpinWheelScreen(
                         viewModel = mainViewModel,
@@ -107,6 +137,38 @@ fun PocketCashApp() {
                 }
                 composable("scratch") {
                     ScratchCardScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
+                composable("quiz") {
+                    QuizScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
+                
+                composable("privacy_policy") {
+                    PrivacyPolicyScreen(
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
+                composable("feedback") {
+                    FeedbackScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
+
+                composable("daily_rewards") {
+                    DailyRewardsScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
+                    )
+                }
+                
+                composable("math_blitz") {
+                    SpeedMathBlitzScreen(
                         viewModel = mainViewModel,
                         onBack = { rootNavController.popBackStack() }
                     )
