@@ -130,14 +130,20 @@ fun HomeScreen(
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
+                        val userRank = when {
+                            (userState?.lifetimeEarnings ?: 0) >= 5000 -> "Pocket Elite 💎"
+                            (userState?.lifetimeEarnings ?: 0) >= 1000 -> "Pro Member 🌟"
+                            else -> "Level 1 Earner 🚀"
+                        }
+                        
                         Text(
-                            text = userState?.displayName ?: "PocketCash Pro",
+                            text = if (userState?.displayName.isNullOrBlank()) "PocketCash Pro" else userState!!.displayName,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = HomeTextMain
                         )
                         Text(
-                            text = "● ONLINE PRO",
+                            text = userRank,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = HomeNeonGreen
@@ -378,6 +384,77 @@ fun HomeScreen(
     }
 }
 
+
+@Composable
+fun FeaturedGameCard(
+    title: String,
+    subtitle: String,
+    imageUrl: String,
+    bgGradient: List<Color>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(110.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.horizontalGradient(bgGradient))
+            .clickable { onClick() }
+    ) {
+        // Shine effect
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Brush.linearGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.2f), Color.Transparent),
+                    start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    end = androidx.compose.ui.geometry.Offset(300f, 300f)
+                ))
+        )
+        
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    style = androidx.compose.ui.text.TextStyle(
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = 0.3f),
+                            offset = androidx.compose.ui.geometry.Offset(2f, 2f),
+                            blurRadius = 4f
+                        )
+                    )
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = subtitle,
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+            
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = title,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .size(80.dp)
+                    .offset(x = 10.dp, y = (-5).dp)
+            )
+        }
+    }
+}
+
 @Composable
 fun ActionCard(
     title: String,
@@ -463,5 +540,13 @@ fun IconButtonGlass(icon: ImageVector, onClick: () -> Unit) {
             .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(14.dp))
     ) {
         Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+    }
+}
+
+private fun safeOpenUrl(context: android.content.Context, url: String) {
+    try {
+        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    } catch (e: Exception) {
+        android.widget.Toast.makeText(context, "No app found to open this link", android.widget.Toast.LENGTH_SHORT).show()
     }
 }

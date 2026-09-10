@@ -1,6 +1,13 @@
 package com.example.ui.screens
 
 import android.widget.Toast
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.CustomCredential
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import android.util.Log
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -196,15 +203,25 @@ fun AnimatedHusky() {
 @Composable
 fun AuthScreen(
     viewModel: MainViewModel,
-    onNavigateToHome: () -> Unit
+    onNavigateToHome: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     
     var isLoginMode by remember { mutableStateOf(true) }
     var email by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var rememberMe by remember { mutableStateOf(false) }
+    
+    val userState by viewModel.userState.collectAsState()
+    
+    LaunchedEffect(userState) {
+        if (viewModel.isUserLoggedIn() && userState != null) {
+            onNavigateToHome()
+        }
+    }
     
     val prefs = context.getSharedPreferences("PocketCashAuth", android.content.Context.MODE_PRIVATE)
     
@@ -312,8 +329,22 @@ fun AuthScreen(
                     )
 
                     // Form Fields
+                    AnimatedVisibility(visible = !isLoginMode) {
+                        Column {
+                            AuthTextField(
+                                value = name,
+                                onValueChange = { name = it },
+                                placeholder = "Full Name",
+                                icon = Icons.Default.Person,
+                                keyboardType = KeyboardType.Text
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                    
                     AuthTextField(
                         value = email,
+
                         onValueChange = { email = it },
                         placeholder = "Email Address",
                         icon = Icons.Default.Email,
@@ -392,7 +423,7 @@ fun AuthScreen(
                                 "Forgot Password?", 
                                 fontSize = 12.sp, 
                                 color = Color(0xFF38BDF8),
-                                modifier = Modifier.clickable { }
+                                modifier = Modifier.clickable { onNavigateToForgotPassword() }
                             )
                         }
                     } else {
@@ -402,7 +433,7 @@ fun AuthScreen(
                     // Submit Button
                     Button(
                         onClick = {
-                            if (email.isBlank() || password.isBlank()) {
+                            if (email.isBlank() || password.isBlank() || (!isLoginMode && name.isBlank())) {
                                 Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
@@ -413,7 +444,7 @@ fun AuthScreen(
                                         viewModel.login(email, password)
                                     } else {
                                         val deviceId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
-                                        viewModel.signup(email, password, selectedCountry, referralCode, deviceId)
+                                        viewModel.signup(email, password, name, selectedCountry, referralCode, deviceId)
                                     }
                                     
                                     if (rememberMe) {
@@ -432,7 +463,7 @@ fun AuthScreen(
                                         msg.contains("invalid", ignoreCase = true) -> "Invalid email or password."
                                         msg.contains("already in use", ignoreCase = true) -> "This email is already registered."
                                         msg.contains("badly formatted", ignoreCase = true) -> "Invalid email format."
-                                        else -> "Authentication failed. Please try again."
+                                        else -> "Auth failed: $msg"
                                     }
                                     Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
                                 } finally {

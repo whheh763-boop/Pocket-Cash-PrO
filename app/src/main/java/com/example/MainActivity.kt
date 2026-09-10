@@ -21,6 +21,7 @@ import com.example.ui.screens.PrivacyPolicyScreen
 import com.example.ui.screens.FeedbackScreen
 
 import com.example.ui.screens.AuthScreen
+import com.example.ui.screens.ForgotPasswordScreen
 import com.example.ui.screens.SplashScreen
 import com.example.ui.screens.MainAppScreen
 import com.example.ui.screens.MathCaptchaScreen
@@ -80,13 +81,22 @@ fun PocketCashApp() {
             NavHost(navController = rootNavController, startDestination = "splash") {
                 composable("splash") {
                     SplashScreen(
-                        onNavigateNext = { rootNavController.navigate("auth") { popUpTo("splash") { inclusive = true } } }
+                        viewModel = mainViewModel,
+                        onNavigateToAuth = { rootNavController.navigate("auth") { popUpTo("splash") { inclusive = true } } },
+                        onNavigateToHome = { rootNavController.navigate("main") { popUpTo("splash") { inclusive = true } } }
                     )
                 }
                 composable("auth") {
                     AuthScreen(
                         viewModel = mainViewModel,
-                        onNavigateToHome = { rootNavController.navigate("main") { popUpTo("auth") { inclusive = true } } }
+                        onNavigateToHome = { rootNavController.navigate("main") { popUpTo("auth") { inclusive = true } } },
+                        onNavigateToForgotPassword = { rootNavController.navigate("forgot_password") }
+                    )
+                }
+                composable("forgot_password") {
+                    ForgotPasswordScreen(
+                        viewModel = mainViewModel,
+                        onBack = { rootNavController.popBackStack() }
                     )
                 }
                 composable("main") {

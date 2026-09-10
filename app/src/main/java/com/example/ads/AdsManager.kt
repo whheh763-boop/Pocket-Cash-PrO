@@ -17,6 +17,9 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.appopen.AppOpenAd
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
+
 import com.unity3d.ads.IUnityAdsInitializationListener
 import com.unity3d.ads.IUnityAdsLoadListener
 import com.unity3d.ads.IUnityAdsShowListener
@@ -63,6 +66,7 @@ object AdsManager {
             isAdmobInitialized = true
             Log.d(TAG, "AdMob Initialized: ${initializationStatus.adapterStatusMap}")
             loadAdMobRewarded(activity)
+            loadAdMobInterstitial(activity)
             loadAppOpenAd(activity)
         }
         
@@ -82,12 +86,14 @@ object AdsManager {
                 override fun onAdDismissedFullScreenContent() {
                     admobRewardedAd = null
                     loadAdMobRewarded(activity)
+            loadAdMobInterstitial(activity)
                     onAdDismissed()
                 }
 
                 override fun onAdFailedToShowFullScreenContent(error: AdError) {
                     admobRewardedAd = null
                     loadAdMobRewarded(activity)
+            loadAdMobInterstitial(activity)
                     showUnityInterstitial(activity, onRewardEarned, onAdDismissed)
                 }
             }
@@ -98,6 +104,7 @@ object AdsManager {
             }
         } else {
             loadAdMobRewarded(activity)
+            loadAdMobInterstitial(activity)
             showUnityInterstitial(activity, onRewardEarned, onAdDismissed)
         }
     }
@@ -141,6 +148,48 @@ object AdsManager {
                 loadUnityAds()
             }
         })
+    }
+
+
+    private const val TEST_INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
+    private const val REAL_INTERSTITIAL_ID = "ca-app-pub-8551073579787342/1234567890" // Placeholder
+    private val currentInterstitialId: String
+        get() = if (isRealAdsEnabled) REAL_INTERSTITIAL_ID else TEST_INTERSTITIAL_ID
+        
+    private var admobInterstitialAd: InterstitialAd? = null
+
+    private fun loadAdMobInterstitial(context: Context) {
+        if (admobInterstitialAd != null) return
+        val adRequest = AdRequest.Builder().build()
+        InterstitialAd.load(context, currentInterstitialId, adRequest, object : InterstitialAdLoadCallback() {
+            override fun onAdLoaded(ad: InterstitialAd) {
+                admobInterstitialAd = ad
+            }
+            override fun onAdFailedToLoad(error: LoadAdError) {
+                admobInterstitialAd = null
+            }
+        })
+    }
+
+    fun showInterstitialAd(activity: Activity, onAdDismissed: () -> Unit) {
+        if (admobInterstitialAd != null) {
+            admobInterstitialAd?.fullScreenContentCallback = object : FullScreenContentCallback() {
+                override fun onAdDismissedFullScreenContent() {
+                    admobInterstitialAd = null
+                    loadAdMobInterstitial(activity)
+                    onAdDismissed()
+                }
+                override fun onAdFailedToShowFullScreenContent(error: AdError) {
+                    admobInterstitialAd = null
+                    loadAdMobInterstitial(activity)
+                    onAdDismissed()
+                }
+            }
+            admobInterstitialAd?.show(activity)
+        } else {
+            loadAdMobInterstitial(activity)
+            onAdDismissed()
+        }
     }
 
     // --- App Open Ad ---

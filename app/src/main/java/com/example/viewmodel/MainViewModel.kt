@@ -102,16 +102,31 @@ class MainViewModel : ViewModel() {
         }
     }
     
+    fun isUserLoggedIn(): Boolean {
+        return repository.isUserLoggedIn() != null
+    }
+    
     suspend fun login(email: String, pass: String) {
         val uid = repository.signInWithEmail(email, pass)
         startObserving(uid)
     }
     
-    suspend fun signup(email: String, pass: String, country: Country, refCode: String, deviceId: String) {
-        val uid = repository.signUpWithEmail(email, pass, country, refCode, deviceId)
+    suspend fun signup(email: String, pass: String, name: String, country: Country, refCode: String, deviceId: String) {
+        val uid = repository.signUpWithEmail(email, pass, name, country, refCode, deviceId)
         startObserving(uid)
     }
     
+    
+    suspend fun loginWithGoogle(idToken: String) {
+        val uid = repository.signInWithGoogle(idToken)
+        startObserving(uid)
+    }
+
+    
+    suspend fun sendPasswordReset(email: String) {
+        repository.resetPassword(email)
+    }
+
     fun logout() {
         repository.logout()
         currentUid = ""
@@ -223,10 +238,77 @@ class MainViewModel : ViewModel() {
         }
     }
     
+
+
+    fun generateSecureQuiz(type: String, isAd: Boolean, onResult: (Result<com.example.model.SecureQuizData>) -> Unit) {
+        if (currentUid.isEmpty()) {
+            onResult(Result.failure(Exception("Not logged in")))
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.generateSecureQuiz(currentUid, type, isAd)
+            withContext(Dispatchers.Main) {
+                onResult(result)
+            }
+        }
+    }
+
+    fun submitSecureQuizAnswer(taskId: String, selectedIndex: Int, onResult: (Result<Boolean>) -> Unit) {
+        if (currentUid.isEmpty()) {
+            onResult(Result.failure(Exception("Not logged in")))
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.submitSecureQuizAnswer(currentUid, taskId, selectedIndex)
+            withContext(Dispatchers.Main) {
+                onResult(result)
+            }
+        }
+    }
+
+    fun generateSecureScratchCard(isAdScratch: Boolean, onResult: (Result<Pair<String, Int>>) -> Unit) {
+        if (currentUid.isEmpty()) {
+            onResult(Result.failure(Exception("Not logged in")))
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.generateSecureScratchCard(currentUid, isAdScratch)
+            withContext(Dispatchers.Main) {
+                onResult(result)
+            }
+        }
+    }
+
+    fun claimSecureScratchReward(taskId: String, onResult: (Result<Int>) -> Unit) {
+        if (currentUid.isEmpty()) {
+            onResult(Result.failure(Exception("Not logged in")))
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.claimSecureScratchReward(currentUid, taskId)
+            withContext(Dispatchers.Main) {
+                onResult(result)
+            }
+        }
+    }
+
+    fun performSecureSpin(isAdSpin: Boolean, onResult: (Result<Int>) -> Unit) {
+        if (currentUid.isEmpty()) {
+            onResult(Result.failure(Exception("Not logged in")))
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = repository.performSecureSpin(currentUid, isAdSpin)
+            withContext(Dispatchers.Main) {
+                onResult(result)
+            }
+        }
+    }
+
     fun performDailyCheckIn() {
         if (currentUid.isNotEmpty() && _userState.value.canCheckIn) {
             viewModelScope.launch(Dispatchers.IO) {
-                repository.performCheckIn(currentUid, _appConfig.value.dailyCheckInReward)
+                repository.performCheckIn(currentUid)
             }
         }
     }
@@ -287,5 +369,15 @@ class MainViewModel : ViewModel() {
             }
         }
     }
-}
 
+    private val _referralStats = MutableStateFlow(Pair(0, 0))
+    val referralStats: StateFlow<Pair<Int, Int>> = _referralStats.asStateFlow()
+
+    fun fetchReferralStats(refCode: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val stats = repository.getReferralStats(refCode)
+            _referralStats.value = stats
+        }
+    }
+
+}

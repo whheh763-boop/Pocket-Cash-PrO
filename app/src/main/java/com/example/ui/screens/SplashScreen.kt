@@ -21,10 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalContext
+import com.example.viewmodel.MainViewModel
 import com.example.R // Important: Adjust this import to your actual R class
 
 @Composable
-fun SplashScreen(onNavigateNext: () -> Unit) {
+fun SplashScreen(viewModel: MainViewModel, onNavigateToAuth: () -> Unit, onNavigateToHome: () -> Unit) {
     var startAnimation by remember { mutableStateOf(false) }
     val alphaAnim = animateFloatAsState(
         targetValue = if (startAnimation) 1f else 0f,
@@ -38,7 +40,14 @@ fun SplashScreen(onNavigateNext: () -> Unit) {
     LaunchedEffect(key1 = true) {
         startAnimation = true
         delay(2500) // 2.5 seconds splash
-        onNavigateNext()
+        
+        // Auto-login check
+        val isLogged = viewModel.isUserLoggedIn()
+        if (isLogged) {
+            onNavigateToHome()
+        } else {
+            onNavigateToAuth()
+        }
     }
 
     Box(

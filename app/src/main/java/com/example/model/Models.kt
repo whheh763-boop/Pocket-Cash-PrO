@@ -8,7 +8,7 @@ enum class Country(val displayName: String, val currencySymbol: String, val exch
 data class User(
     val uid: String = "",
     val email: String = "",
-    val displayName: String = "Guest User",
+    val displayName: String = "",
     val paymentId: String = "",
     val deviceId: String = "",
     val coinBalance: Int = 0,
@@ -18,12 +18,24 @@ data class User(
     val referredBy: String = "",
     val dailyMathLimit: Int = 15,
     val dailyCaptchaLimit: Int = 20,
+    val dailyFreeSpinsLeft: Int = 10,
+    val dailyAdSpinsLeft: Int = 20,
+    val dailyFreeScratchLeft: Int = 10,
+    val dailyAdScratchLeft: Int = 20,
+    val dailyFreeMathQuizLeft: Int = 10,
+    val dailyAdMathQuizLeft: Int = 15,
+    val dailyFreeGkQuizLeft: Int = 10,
+    val dailyAdGkQuizLeft: Int = 15,
     val canCheckIn: Boolean = true,
     val lastResetDate: String = "",
     val lastSpinTime: Long = 0L,
     val currentStreak: Int = 0,
     val totalCheckIns: Int = 0,
-    val completedQuizzes: List<String> = emptyList()
+    val completedQuizzes: List<String> = emptyList(),
+    val totalSpins: Int = 0,
+    val referralMilestoneCompleted: Boolean = false,
+    val ipAddress: String = ""
+
 )
 
 data class Transaction(
@@ -83,4 +95,12 @@ data class Feedback(
     val reason: String = "",
     val message: String = "",
     val timestamp: Long = 0L
+)
+
+data class SecureQuizData(
+    val id: String = "",
+    val type: String = "",
+    val question: String = "",
+    val options: List<String> = emptyList(),
+    val rewardCoins: Int = 2
 )

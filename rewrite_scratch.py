@@ -1,4 +1,6 @@
-package com.example.ui.screens
+import re
+
+content = """package com.example.ui.screens
 
 import android.app.Activity
 import android.widget.Toast
@@ -283,7 +285,7 @@ fun ScratchCardScreen(
                         }
 
                         // Scratch Overlay Layer
-                        androidx.compose.animation.AnimatedVisibility(
+                        AnimatedVisibility(
                             visible = !isScratched,
                             exit = fadeOut(animationSpec = tween(500))
                         ) {
@@ -345,7 +347,7 @@ fun ScratchCardScreen(
                                 }
 
                                 // Apply clear blend mode to the user's paths
-                                drawContext.canvas.saveLayer(androidx.compose.ui.geometry.Rect(Offset.Zero, size), androidx.compose.ui.graphics.Paint())
+                                drawContext.canvas.saveLayer(size.toRect(), androidx.compose.ui.graphics.Paint())
                                 drawRect(Color(0xFF64748B)) // Solid overlay on top of layer
                                 
                                 val clearPaint = androidx.compose.ui.graphics.Paint().apply {
@@ -481,3 +483,7 @@ fun ScratchCardScreen(
         }
     }
 }
+"""
+
+with open('app/src/main/java/com/example/ui/screens/ScratchCardScreen.kt', 'w') as f:
+    f.write(content)

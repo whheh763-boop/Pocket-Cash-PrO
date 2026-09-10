@@ -1,4 +1,9 @@
-package com.example.ui.screens
+import re
+
+with open('app/src/main/java/com/example/ui/screens/SpinWheelScreen.kt', 'r') as f:
+    content = f.read()
+
+imports = """package com.example.ui.screens
 
 import android.app.Activity
 import android.widget.Toast
@@ -479,3 +484,7 @@ fun SpinWheelScreen(
         }
     }
 }
+"""
+
+with open('app/src/main/java/com/example/ui/screens/SpinWheelScreen.kt', 'w') as f:
+    f.write(imports)

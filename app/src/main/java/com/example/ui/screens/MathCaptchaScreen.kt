@@ -116,7 +116,7 @@ fun MathCaptchaScreen(viewModel: MainViewModel, onBack: () -> Unit) {
                 ) {
                     Column {
                         Text("DAILY CAPTCHAS", fontSize = 12.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.SemiBold)
-                        Text("$captchasLeft/20", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.ExtraBold)
+                        Text("$captchasLeft Left", fontSize = 18.sp, color = Color.White, fontWeight = FontWeight.ExtraBold)
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text("REWARD / CAPTCHA", fontSize = 12.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.SemiBold)

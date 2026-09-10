@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.ui.theme.*
+import com.google.firebase.auth.FirebaseAuth
 import com.example.viewmodel.MainViewModel
 
 @Composable
@@ -66,7 +67,7 @@ fun ProfileScreen(
             ) {
                 Text("My Account", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
                 IconButtonGlass(icon = Icons.Default.Settings, onClick = {
-                    if (userState.email == "chanelentertainment93@gmail.com") onNavigateToAdmin() else Toast.makeText(context, "Settings", Toast.LENGTH_SHORT).show()
+                    if (userState.email.equals("chanelentertainment93@gmail.com", ignoreCase = true) || FirebaseAuth.getInstance().currentUser?.email.equals("chanelentertainment93@gmail.com", ignoreCase = true)) onNavigateToAdmin() else Toast.makeText(context, "Settings", Toast.LENGTH_SHORT).show()
                 })
             }
         }
@@ -88,7 +89,7 @@ fun ProfileScreen(
             ) {
                 Box(contentAlignment = Alignment.BottomEnd) {
                     AsyncImage(
-                        model = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+                        model = "https://t4.ftcdn.net/jpg/09/44/23/91/360_F_944239186_kbKzpH8DsEq6eSGXqKvPHeH8fOwvrx8r.jpg",
                         contentDescription = "Avatar",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
@@ -108,7 +109,7 @@ fun ProfileScreen(
                 
                 Column {
                     Text(
-                        userState.displayName.ifEmpty { "Guest User" },
+                        userState.displayName.ifEmpty { "PocketCash Pro" },
                         color = Color.White,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
@@ -151,7 +152,7 @@ fun ProfileScreen(
                     .border(1.dp, MovieAccent.copy(alpha = 0.3f), RoundedCornerShape(22.dp))
                     .clickable {
                         if (appConfig.partnerAppUrl.isNotEmpty()) {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.partnerAppUrl)))
+                            safeOpenUrl(context, appConfig.partnerAppUrl)
                         }
                     }
                     .padding(16.dp),
@@ -202,16 +203,16 @@ fun ProfileScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 SocialBtnPremium(modifier = Modifier.weight(1f), name = "WhatsApp", color = IconTintWhatsapp, icon = Icons.AutoMirrored.Filled.Chat) {
-                    if (appConfig.whatsappLink.isNotEmpty()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.whatsappLink)))
+                    safeOpenUrl(context, "https://wa.me/9779706612914")
                 }
-                SocialBtnPremium(modifier = Modifier.weight(1f), name = "Telegram", color = IconTintTelegram, icon = Icons.AutoMirrored.Filled.Send) {
-                    if (appConfig.telegramLink.isNotEmpty()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.telegramLink)))
+                SocialBtnPremium(modifier = Modifier.weight(1f), name = "TikTok", color = Color(0xFF000000), icon = Icons.Default.MusicVideo) {
+                    safeOpenUrl(context, "https://www.tiktok.com/@sanjay1.50?_r=1&_t=ZS-99arKzforYa")
                 }
                 SocialBtnPremium(modifier = Modifier.weight(1f), name = "Instagram", color = IconTintInstagram, icon = Icons.Default.CameraAlt) {
-                    if (appConfig.instagramLink.isNotEmpty()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.instagramLink)))
+                    if (appConfig.instagramLink.isNotEmpty()) safeOpenUrl(context, appConfig.instagramLink)
                 }
                 SocialBtnPremium(modifier = Modifier.weight(1f), name = "YouTube", color = IconTintYoutube, icon = Icons.Default.PlayArrow) {
-                    if (appConfig.youtubeLink.isNotEmpty()) context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(appConfig.youtubeLink)))
+                    safeOpenUrl(context, "https://youtube.com/@sanjay_hack_2.99?si=_-CljQLWfVSHBe4x1")
                 }
             }
         }
@@ -324,5 +325,13 @@ fun SettingsRowPremium(
             }
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = PremiumOnSurfaceVariant, modifier = Modifier.size(18.dp))
+    }
+}
+
+private fun safeOpenUrl(context: android.content.Context, url: String) {
+    try {
+        context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+    } catch (e: Exception) {
+        android.widget.Toast.makeText(context, "No app found to open this link", android.widget.Toast.LENGTH_SHORT).show()
     }
 }

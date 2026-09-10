@@ -1,4 +1,6 @@
-package com.example.ui.screens
+import re
+
+content = """package com.example.ui.screens
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -283,3 +285,7 @@ fun shareIntent(context: Context, code: String, bonus: Int, packageTarget: Strin
         Toast.makeText(context, "App not found!", Toast.LENGTH_SHORT).show()
     }
 }
+"""
+
+with open('app/src/main/java/com/example/ui/screens/ReferScreen.kt', 'w') as f:
+    f.write(content)
